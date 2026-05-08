@@ -22,12 +22,17 @@ const Register = () => {
   );
 
   useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+
     if (isError) {
       alert(message);
     }
 
-    if (isSuccess || user) {
-      navigate('/dashboard');
+    if (isSuccess) {
+      alert('Registration successful! Please login.');
+      navigate('/login');
     }
 
     dispatch(reset());

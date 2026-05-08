@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     notifications: { type: Boolean, default: true },
     dailyReminderTime: { type: String, default: '09:00' }
   },
+  phone: { type: String, default: '' },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 }, { timestamps: true });

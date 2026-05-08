@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { fetchDashboardStats, quickCreateJournal, resetDashboard } from '../store/features/dashboardSlice';
 import CrisisSupport from '../components/CrisisSupport';
+import BodyMindSyncInsight from '../components/BodyMindSyncInsight';
 
 
 const promptsByMood = {
@@ -155,6 +156,8 @@ const UserDashboard = () => {
           </Link>
         </div>
       </div>
+
+      <BodyMindSyncInsight />
 
       {}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

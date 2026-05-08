@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { Plus, Trash2, Calendar, Smile, Book } from 'lucide-react';
+import { detectEmotionalVocab } from '../utils/emotionalFingerprint';
+import BodyMindSyncWidget from '../components/BodyMindSyncWidget';
 
 const Journal = () => {
   const { user } = useSelector((state) => state.auth);
@@ -14,11 +16,13 @@ const Journal = () => {
     content: '',
     mood: 5,
   });
+  const [showSyncWidget, setShowSyncWidget] = useState(false);
+  const [lastMood, setLastMood] = useState(5);
 
   const getJournals = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const res = await axios.get('http:
+      const res = await axios.get('http://localhost:5000/api/journal', config);
       setJournals(res.data);
     } catch (error) {
       console.error(error);
@@ -39,9 +43,14 @@ const Journal = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      // Detect emotional vocabulary from content
+      detectEmotionalVocab(formData.content);
+      
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       await axios.post('http://localhost:5000/api/journal', formData, config);
+      setLastMood(formData.mood);
       setIsModalOpen(false);
+      setShowSyncWidget(true);
       setFormData({ title: '', content: '', mood: 5 });
       getJournals();
     } catch (error) {
@@ -224,6 +233,17 @@ const Journal = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showSyncWidget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-md">
+            <BodyMindSyncWidget 
+              moodScore={lastMood} 
+              onClose={() => setShowSyncWidget(false)} 
+            />
           </div>
         </div>
       )}

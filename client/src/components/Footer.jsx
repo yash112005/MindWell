@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Brain, Twitter, Instagram, Linkedin, Mail, Heart } from 'lucide-react';
+import { Brain, Mail, Heart } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -20,15 +20,7 @@ const Footer = () => {
               Empowering your mental wellness journey with AI-driven insights and compassionate support. Your safe space for growth and reflection.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-primary-600 transition-colors">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-primary-600 transition-colors">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-primary-600 transition-colors">
-                <Linkedin className="w-5 h-5" />
-              </a>
+              {}
             </div>
           </div>
 

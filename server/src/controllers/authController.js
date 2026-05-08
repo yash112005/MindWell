@@ -46,9 +46,6 @@ const registerUser = async (req, res) => {
     if (user) {
       res.status(201).json({
         success: true,
-        token: generateToken(user),
-        role: user.role,
-        name: user.name,
         message: 'Registration successful'
       });
     } else {
@@ -160,10 +157,90 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      user.name = name || user.name;
+      user.phone = phone !== undefined ? phone : user.phone;
+
+      const updatedUser = await user.save();
+
+      res.status(200).json({
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        preferences: updatedUser.preferences,
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updatePreferences = async (req, res) => {
+  try {
+    const { theme, notifications, dailyReminderTime } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      user.preferences = {
+        theme: theme || user.preferences.theme,
+        notifications: notifications !== undefined ? notifications : user.preferences.notifications,
+        dailyReminderTime: dailyReminderTime || user.preferences.dailyReminderTime,
+      };
+
+      const updatedUser = await user.save();
+
+      res.status(200).json({
+        id: updatedUser._id,
+        preferences: updatedUser.preferences,
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      user.passwordHash = await bcrypt.hash(newPassword, salt);
+      await user.save();
+
+      res.status(200).json({ message: 'Password updated successfully' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
   getUsers,
   updateUserRole,
+  updateProfile,
+  updatePreferences,
+  updatePassword,
 };

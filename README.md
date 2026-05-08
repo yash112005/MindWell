@@ -26,7 +26,7 @@ MindWell is a secure, comprehensive web application designed to support mental w
 * **Backend**: Node.js, Express.js
 * **Database**: MongoDB (Mongoose)
 * **Authentication**: JWT, Secure RBAC, WebSockets
-* **AI**: Gemini API Integration
+* **AI**: Gemini API Integration , NLP 
 
 ## 🚀 Installation
 1. Clone the repository:

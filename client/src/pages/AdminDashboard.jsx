@@ -4,8 +4,9 @@ import axios from 'axios';
 import {
   Users, Activity, UserPlus, TrendingUp, AlertTriangle,
   MessageSquare, Download, ShieldAlert, ThumbsUp, ThumbsDown,
-  ShieldCheck, ShieldOff, Search, RefreshCw, Crown
+  ShieldCheck, ShieldOff, Search, RefreshCw, Crown, BookOpen
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area
@@ -177,9 +178,6 @@ const UserManagement = ({ token }) => {
     </div>
   );
 };
-
-
-import { io } from 'socket.io-client';
 
 const AdminDashboard = () => {
   const { user } = useSelector((state) => state.auth);

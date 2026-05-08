@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { Send, Brain, User as UserIcon } from 'lucide-react';
+import { reflectWithVocabulary } from '../utils/emotionalFingerprint';
 
 const Chat = () => {
   const { user } = useSelector((state) => state.auth);
@@ -13,10 +14,15 @@ const Chat = () => {
   const getChatHistory = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const res = await axios.get('http:
+      const res = await axios.get('http://localhost:5000/api/chat', config);
       if (res.data && res.data.messages) {
-        setMessages(res.data.messages);
+        const reflectedMessages = res.data.messages.map(msg => ({
+          ...msg,
+          content: msg.sender === 'ai' ? reflectWithVocabulary(msg.content) : msg.content
+        }));
+        setMessages(reflectedMessages);
       }
+    
     } catch (error) {
       console.error('Failed to load chat history:', error);
     }
@@ -32,19 +38,24 @@ const Chat = () => {
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    const messageText = input.trim();
+    if (!messageText) return;
 
-    const userMessage = { sender: 'user', content: input };
+    const userMessage = { sender: 'user', content: messageText };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const res = await axios.post('http:
+      const res = await axios.post('http://localhost:5000/api/chat', { message: messageText }, config);
       
       if (res.data && res.data.messages) {
-        setMessages(res.data.messages);
+        const reflectedMessages = res.data.messages.map(msg => ({
+          ...msg,
+          content: msg.sender === 'ai' ? reflectWithVocabulary(msg.content) : msg.content
+        }));
+        setMessages(reflectedMessages);
       }
     } catch (error) {
       console.error('Failed to send message:', error);

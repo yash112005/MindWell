@@ -18,9 +18,6 @@ const initialState = {
 export const register = createAsyncThunk('auth/register', async (userData, thunkAPI) => {
   try {
     const response = await axios.post(API_URL + 'register', userData);
-    if (response.data) {
-      localStorage.setItem('user', JSON.stringify(response.data));
-    }
     return response.data;
   } catch (error) {
     const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
@@ -46,6 +43,69 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   localStorage.removeItem('user');
 });
 
+// Update profile
+export const updateProfile = createAsyncThunk('auth/updateProfile', async (userData, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.user.token;
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const response = await axios.put(API_URL + 'profile', userData, config);
+    if (response.data) {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const updatedUser = { ...user, ...response.data };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return updatedUser;
+    }
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+// Update preferences
+export const updatePreferences = createAsyncThunk('auth/updatePreferences', async (prefData, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.user.token;
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const response = await axios.put(API_URL + 'preferences', prefData, config);
+    if (response.data) {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const updatedUser = { ...user, preferences: response.data.preferences };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return updatedUser;
+    }
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+// Update password
+export const updatePassword = createAsyncThunk('auth/updatePassword', async (pwdData, thunkAPI) => {
+  try {
+    const token = thunkAPI.getState().auth.user.token;
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const response = await axios.put(API_URL + 'password', pwdData, config);
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -65,7 +125,6 @@ export const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -89,6 +148,44 @@ export const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.user = { ...state.user, ...action.payload };
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(updatePreferences.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updatePreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.user = { ...state.user, ...action.payload };
+      })
+      .addCase(updatePreferences.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(updatePassword.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updatePassword.fulfilled, (state) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+      })
+      .addCase(updatePassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       });
   },
 });

@@ -12,7 +12,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import Journal from './pages/Journal';
 import Chat from './pages/Chat';
 import MoodAnalytics from './pages/MoodAnalytics';
+import Exercises from './pages/Exercises';
 import Settings from './pages/Settings';
+import UnsentLetters from './pages/UnsentLetters';
 import AccessDenied from './pages/AccessDenied';
 
 function App() {
@@ -62,6 +64,12 @@ function App() {
             } />
             <Route path="/analytics" element={
               <ProtectedRoute role="user"><MoodAnalytics /></ProtectedRoute>
+            } />
+            <Route path="/exercises" element={
+              <ProtectedRoute role="user"><Exercises /></ProtectedRoute>
+            } />
+            <Route path="/unsent-letters" element={
+              <ProtectedRoute role="user"><UnsentLetters /></ProtectedRoute>
             } />
 
             {}
