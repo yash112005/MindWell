@@ -259,6 +259,29 @@ Return raw JSON only, no markdown.
         console.error('Gemini insight error:', err.message);
       }
     }
+    // Early Identification Logic (last 14 days)
+    let riskLevel = 'Normal';
+    let riskRecommendation = '';
+    
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    
+    const recentEntries = allEntries.filter(e => new Date(e.date) >= fourteenDaysAgo);
+    const lowMoodCount = recentEntries.filter(e => e.mood < 4).length;
+    const negativeSentimentCount = recentEntries.filter(e => e.sentiment && e.sentiment.toLowerCase() === 'negative').length;
+    const sadnessCount = recentEntries.filter(e => e.dominantEmotion === 'sadness').length;
+    const fearCount = recentEntries.filter(e => e.dominantEmotion === 'fear').length;
+
+    if (sadnessCount >= 4 || lowMoodCount >= 4) {
+      riskLevel = 'Signs of Depression';
+      riskRecommendation = 'We notice you\'ve been experiencing persistent low mood. Please consider talking to a mental health professional.';
+    } else if (fearCount >= 3 || (negativeSentimentCount >= 3 && fearCount >= 1)) {
+      riskLevel = 'Emerging Anxiety';
+      riskRecommendation = 'You seem to be carrying a lot of anxiety lately. Reaching out for professional support could be really helpful.';
+    } else if (negativeSentimentCount >= 3 || lowMoodCount >= 2) {
+      riskLevel = 'Early Stress';
+      riskRecommendation = 'You are showing early signs of stress. Consider taking a break or trying some grounding exercises.';
+    }
 
     res.status(200).json({
       weeklyMood,
@@ -269,6 +292,8 @@ Return raw JSON only, no markdown.
       emotionCounts,
       insights,
       insightPattern,
+      riskLevel,
+      riskRecommendation,
     });
   } catch (error) {
     console.error('Stats error:', error);

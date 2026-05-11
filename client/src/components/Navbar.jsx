@@ -39,10 +39,8 @@ const Navbar = () => {
       : [
           { name: 'User Dashboard', path: '/dashboard' },
           { name: 'Journal', path: '/journal' },
-          { name: 'Chat AI', path: '/chat' },
           { name: 'Analytics', path: '/analytics' },
           { name: 'Exercises', path: '/exercises' },
-          { name: 'Unsent Letters', path: '/unsent-letters' },
         ]
     : [
         { name: 'Home', path: '/' },

@@ -14,8 +14,10 @@ import Chat from './pages/Chat';
 import MoodAnalytics from './pages/MoodAnalytics';
 import Exercises from './pages/Exercises';
 import Settings from './pages/Settings';
-import UnsentLetters from './pages/UnsentLetters';
 import AccessDenied from './pages/AccessDenied';
+import FloatingChat from './components/FloatingChat';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -51,6 +53,8 @@ function App() {
                   : <Navigate to={['admin', 'superadmin', 'moderator', 'analyst', 'editor'].includes(user.role) ? '/admin-dashboard' : '/dashboard'} replace />
               }
             />
+            <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/reset-password/:token" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" replace />} />
 
             {}
             <Route path="/dashboard" element={
@@ -68,9 +72,7 @@ function App() {
             <Route path="/exercises" element={
               <ProtectedRoute role="user"><Exercises /></ProtectedRoute>
             } />
-            <Route path="/unsent-letters" element={
-              <ProtectedRoute role="user"><UnsentLetters /></ProtectedRoute>
-            } />
+
 
             {}
             <Route path="/admin-dashboard" element={
@@ -87,6 +89,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+        <FloatingChat />
         <Footer />
       </div>
     </Router>
