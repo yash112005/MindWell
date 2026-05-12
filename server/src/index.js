@@ -12,12 +12,23 @@ const app = express();
 const server = http.createServer(app);
 
 
-const io = new Server(server, {
-  cors: {
-    origin: 'https://mind-well-three.vercel.app',
-    methods: ['GET', 'POST']
-  }
-});
+app.use(cors({
+  origin: function(origin, callback) {
+    if (
+      !origin ||
+      origin.endsWith('.vercel.app') ||
+      origin === 'http://localhost:5173' ||
+      origin === 'http://localhost:3000'
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 
 app.use(cors());
