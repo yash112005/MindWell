@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/email');
 
 
 const generateToken = (user) => {
@@ -262,55 +262,41 @@ const forgotPassword = async (req, res) => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-    // Send email (or log to console if email not configured)
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
-
-      const mailOptions = {
-        from: `"MindWell" <${process.env.EMAIL_USER}>`,
-        to: user.email,
-        subject: 'MindWell - Password Reset Request',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #3b82f6;">🧠 MindWell</h1>
-            </div>
-            <h2 style="color: #1f2937;">Password Reset Request</h2>
-            <p style="color: #4b5563; line-height: 1.6;">
-              Hi ${user.name},<br><br>
-              We received a request to reset your password. Click the button below to set a new password. This link will expire in <strong>15 minutes</strong>.
-            </p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="background-color: #3b82f6; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
-                Reset Password
-              </a>
-            </div>
-            <p style="color: #6b7280; font-size: 14px;">
-              If you didn't request this, you can safely ignore this email. Your password will remain unchanged.
-            </p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
-            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              MindWell — Your Mental Wellness Companion
-            </p>
+    // Send email using the utility
+    const emailSent = await sendEmail({
+      to: user.email,
+      subject: 'MindWell - Password Reset Request',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #3b82f6;">🧠 MindWell</h1>
           </div>
-        `,
-      };
+          <h2 style="color: #1f2937;">Password Reset Request</h2>
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hi ${user.name},<br><br>
+            We received a request to reset your password. Click the button below to set a new password. This link will expire in <strong>15 minutes</strong>.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #3b82f6; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px;">
+            If you didn't request this, you can safely ignore this email. Your password will remain unchanged.
+          </p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            MindWell — Your Mental Wellness Companion
+          </p>
+        </div>
+      `,
+    });
 
-      await transporter.sendMail(mailOptions);
-    } else {
-      // Dev fallback: log reset link to console
-      console.log('\n========================================');
-      console.log('📧 PASSWORD RESET LINK (Dev Mode)');
-      console.log('========================================');
-      console.log(`User: ${user.email}`);
-      console.log(`Link: ${resetUrl}`);
-      console.log('========================================\n');
+    if (!emailSent.success) {
+      return res.status(500).json({ 
+        message: 'Failed to send reset email. Please try again later.',
+        error: process.env.NODE_ENV === 'development' ? emailSent.error : undefined
+      });
     }
 
     res.status(200).json({ message: 'Password reset link sent to your email' });
