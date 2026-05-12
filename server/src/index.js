@@ -14,7 +14,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: 'https://mindwell-2jb4.onrender.com',
+    origin: 'https://mind-well-three.vercel.app',
     methods: ['GET', 'POST']
   }
 });
