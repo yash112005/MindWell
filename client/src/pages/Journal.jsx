@@ -22,7 +22,7 @@ const Journal = () => {
   const getJournals = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const res = await axios.get('http://localhost:5000/api/journal', config);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/journal`, config);
       setJournals(res.data);
     } catch (error) {
       console.error(error);
@@ -47,7 +47,7 @@ const Journal = () => {
       detectEmotionalVocab(formData.content);
       
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      await axios.post('http://localhost:5000/api/journal', formData, config);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/journal`, formData, config);
       setLastMood(formData.mood);
       setIsModalOpen(false);
       setShowSyncWidget(true);
@@ -65,7 +65,7 @@ const Journal = () => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       try {
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
-        await axios.delete(`http://localhost:5000/api/journal/${id}`, config);
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/journal/${id}`, config);
         setJournals(journals.filter((j) => j._id !== id));
       } catch (error) {
         console.error(error);

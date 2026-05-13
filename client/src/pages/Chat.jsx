@@ -14,7 +14,7 @@ const Chat = () => {
   const getChatHistory = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const res = await axios.get('http://localhost:5000/api/chat', config);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/chat`, config);
       if (res.data && res.data.messages) {
         const reflectedMessages = res.data.messages.map(msg => ({
           ...msg,
@@ -48,7 +48,7 @@ const Chat = () => {
 
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const res = await axios.post('http://localhost:5000/api/chat', { message: messageText }, config);
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/chat`, { message: messageText }, config);
       
       if (res.data && res.data.messages) {
         const reflectedMessages = res.data.messages.map(msg => ({

@@ -12,7 +12,7 @@ import {
   Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area
 } from 'recharts';
 
-const API = 'http://localhost:5000/api/auth';
+const API = `${import.meta.env.VITE_API_URL}/api/auth`;
 
 const dauData = [
   { date: 'Week 1', users: 1200 },
@@ -193,7 +193,7 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
-        const res = await axios.get('http://localhost:5000/api/admin/stats', config);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/stats`, config);
         setStats(res.data);
       } catch (err) {
         console.error('Failed to fetch admin stats', err);
@@ -204,7 +204,7 @@ const AdminDashboard = () => {
     }
 
     
-    const socket = io('http://localhost:5000');
+    const socket = io(import.meta.env.VITE_API_URL);
     socket.on('crisis:new-alert', (data) => {
       const newAlert = {
         id: data.alert._id.substring(0, 6),

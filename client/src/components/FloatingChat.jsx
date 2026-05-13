@@ -74,7 +74,7 @@ const FloatingChat = () => {
 
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const res = await axios.post('http://localhost:5000/api/chat', { message: userMsg }, config);
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/chat`, { message: userMsg }, config);
       
       // The API returns the full chat object with a messages array
       const chatMessages = res.data.messages || [];

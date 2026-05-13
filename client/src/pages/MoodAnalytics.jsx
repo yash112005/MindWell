@@ -15,8 +15,8 @@ const MoodAnalytics = () => {
       try {
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
         const [reportRes, journalRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/report', config),
-          axios.get('http://localhost:5000/api/journal', config)
+          axios.get(`${import.meta.env.VITE_API_URL}/api/report`, config),
+          axios.get(`${import.meta.env.VITE_API_URL}/api/journal`, config)
         ]);
         
         setReport(reportRes.data);
