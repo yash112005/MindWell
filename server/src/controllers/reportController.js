@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 
 
@@ -23,11 +23,11 @@ const getReport = async (req, res) => {
       });
     }
 
-    
+
     const averageMood =
       journals.reduce((acc, curr) => acc + curr.mood, 0) / journals.length;
 
-    
+
     const moodDataForAI = journals.map(j => ({
       date: j.date,
       mood: j.mood,
@@ -42,7 +42,7 @@ const getReport = async (req, res) => {
         throw new Error("Missing Gemini API key");
       }
 
-      
+
       const prompt = `
 You are an AI wellness analyst.
 
@@ -55,7 +55,7 @@ Data:
 ${JSON.stringify(moodDataForAI)}
 `;
 
-      
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
 
@@ -65,7 +65,7 @@ ${JSON.stringify(moodDataForAI)}
       console.error('Gemini Error:', geminiError);
     }
 
-    
+
     let report = await Report.findOne({ userId: req.user.id })
       .sort({ createdAt: -1 });
 
