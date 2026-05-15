@@ -73,24 +73,25 @@ const sendMessage = async (req, res) => {
       });
     }
 
-    
-    chat.messages.push({
-      sender: 'user',
-      content: message
-    });
-
-    
     const history = chat.messages.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }]
     }));
 
+    // Now push the current user message to DB AFTER building history for startChat
+    chat.messages.push({
+      sender: 'user',
+      content: message
+    });
+
     let aiResponseContent = "I'm unable to respond right now. Please try again later.";
 
     try {
       if (!process.env.GEMINI_API_KEY) {
-        throw new Error("Missing Gemini API key");
+        throw new Error("Missing Gemini API key in environment variables");
       }
+
+      console.log(`Starting chat session for user ${req.user.id} with ${history.length} previous messages.`);
 
       const chatSession = model.startChat({
         history: history,
@@ -99,10 +100,20 @@ const sendMessage = async (req, res) => {
       const result = await chatSession.sendMessage(message);
       const response = await result.response;
 
+      if (!response || !response.text) {
+        throw new Error("Invalid response received from Gemini API");
+      }
+
       aiResponseContent = response.text();
+      console.log("Gemini responded successfully.");
 
     } catch (geminiError) {
-      console.error("Gemini Error:", geminiError);
+      console.error("Gemini API Error details:", {
+        message: geminiError.message,
+        stack: geminiError.stack,
+        historyCount: history.length
+      });
+      // Fallback message is already set in aiResponseContent
     }
 
     
