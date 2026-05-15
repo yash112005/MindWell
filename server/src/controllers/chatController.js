@@ -1,9 +1,6 @@
 const Chat = require('../models/Chat');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 const systemInstructionText = `You are MindWell, an empathetic AI mental wellness assistant.
 Provide supportive, non-judgmental, and helpful responses.
 You are NOT a therapist or doctor. You provide emotional support, CBT-based coping strategies, journaling guidance, mindfulness tips, and physical exercise recommendations for mental wellness.
@@ -24,10 +21,7 @@ Guidelines:
   6. Deep Breathing with movement – inhale while raising arms, exhale while lowering.
   Always present exercises in numbered steps so they are easy to follow. Keep instructions simple, friendly, and encouraging.`;
 
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-2.5-flash-lite",
-  systemInstruction: systemInstructionText
-});
+// Model is initialized inside sendMessage to ensure API key is loaded
 
 
 
@@ -64,6 +58,10 @@ const sendMessage = async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
 
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     let chat = await Chat.findOne({ userId: req.user.id });
 
     if (!chat) {
@@ -91,6 +89,13 @@ const sendMessage = async (req, res) => {
         throw new Error("Missing Gemini API key in environment variables");
       }
 
+      // Initialize genAI and model inside the handler for robustness
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash-lite", // Using the model you selected
+        systemInstruction: systemInstructionText
+      });
+
       console.log(`Starting chat session for user ${req.user.id} with ${history.length} previous messages.`);
 
       const chatSession = model.startChat({
@@ -111,9 +116,14 @@ const sendMessage = async (req, res) => {
       console.error("Gemini API Error details:", {
         message: geminiError.message,
         stack: geminiError.stack,
-        historyCount: history.length
+        historyCount: history.length,
+        model: "gemini-2.5-flash-lite"
       });
-      // Fallback message is already set in aiResponseContent
+      
+      // Check if it's a safety block
+      if (geminiError.message && geminiError.message.includes("SAFETY")) {
+        aiResponseContent = "I'm sorry, I cannot respond to that as it may violate safety guidelines. How else can I help you?";
+      }
     }
 
     
