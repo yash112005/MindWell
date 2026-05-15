@@ -1,35 +1,59 @@
 const Chat = require('../models/Chat');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const systemInstructionText = `You are MindWell, an empathetic AI mental wellness assistant.
-Provide supportive, non-judgmental, and helpful responses.
-You are NOT a therapist or doctor. You provide emotional support, CBT-based coping strategies, journaling guidance, mindfulness tips, and physical exercise recommendations for mental wellness.
+const systemInstructionText = `
+You are MindWell, an empathetic AI mental wellness assistant.
+
+Provide supportive, calm, and non-judgmental responses.
+
+You are NOT a therapist or doctor.
+You provide emotional support, CBT-based coping strategies,
+journaling guidance, mindfulness tips, and mental wellness exercises.
 
 Guidelines:
-- Help with stress, anxiety, overthinking.
-- Suggest breathing exercises, grounding techniques.
-- Language: You can understand and respond in English, Hindi, and Hinglish (Hindi mixed with English). Use the language the user prefers.
-- Disclaimer: Always be ready to state "I am not a substitute for professional therapy".
-- Crisis Escalation: If the user shows signs of severe depression, self-harm, or hopelessness (e.g., words like "hopeless", "can't go on"), immediately respond warmly and provide this contact: "It sounds like you're going through something difficult. Please consider reaching out to iCall: 9152987821".
-- Never sound robotic, always human-like, brief, and warm.
-- Exercise Suggestions: When relevant, suggest mental health-friendly physical exercises in a clear, step-by-step or point-by-point format. Include exercises such as:
-  1. Progressive Muscle Relaxation (PMR) – tense and release each muscle group slowly.
-  2. Walking or Light Jogging – even 10–15 minutes outdoors can lift mood.
-  3. Yoga poses for stress relief – e.g., Child's Pose, Cat-Cow, Legs Up the Wall.
-  4. Stretching routine – gentle neck, shoulder, and back stretches to release tension.
-  5. Jumping Jacks or Body Movement – quick bursts to release pent-up energy.
-  6. Deep Breathing with movement – inhale while raising arms, exhale while lowering.
-  Always present exercises in numbered steps so they are easy to follow. Keep instructions simple, friendly, and encouraging.`;
+- Help with stress, anxiety, burnout, overthinking.
+- Suggest grounding exercises and breathing techniques.
+- Keep responses concise, warm, and conversational.
+- Never sound robotic.
+- Never pretend to be a licensed therapist.
+- Language: Respond in English, Hindi, or Hinglish depending on the user's language.
 
-// Model is initialized inside sendMessage to ensure API key is loaded
+Crisis Handling:
+If user mentions self-harm, suicide, hopelessness, or severe emotional distress,
+respond supportively and encourage contacting:
+iCall Helpline: 9152987821
+
+Exercise Suggestions:
+When relevant, suggest:
+1. Deep breathing
+2. Progressive Muscle Relaxation
+3. Walking
+4. Stretching
+5. Yoga
+6. Light movement exercises
+
+Always explain exercises step-by-step.
+`;
 
 
 
 
+
+// =======================
+// GET CHAT HISTORY
+// =======================
 
 const getChatHistory = async (req, res) => {
   try {
-    let chat = await Chat.findOne({ userId: req.user.id });
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        message: 'User not authenticated'
+      });
+    }
+
+    let chat = await Chat.findOne({
+      userId: req.user.id
+    });
 
     if (!chat) {
       chat = await Chat.create({
@@ -41,8 +65,11 @@ const getChatHistory = async (req, res) => {
     res.status(200).json(chat);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('Get Chat Error:', error);
+
+    res.status(500).json({
+      message: 'Internal server error'
+    });
   }
 };
 
@@ -50,19 +77,34 @@ const getChatHistory = async (req, res) => {
 
 
 
+
+// =======================
+// SEND MESSAGE
+// =======================
+
 const sendMessage = async (req, res) => {
   try {
+
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ message: 'Message is required' });
+    // Validate message
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        message: 'Message is required'
+      });
     }
 
+    // Validate user
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      return res.status(401).json({
+        message: 'User not authenticated'
+      });
     }
 
-    let chat = await Chat.findOne({ userId: req.user.id });
+    // Find/Create chat
+    let chat = await Chat.findOne({
+      userId: req.user.id
+    });
 
     if (!chat) {
       chat = await Chat.create({
@@ -71,62 +113,172 @@ const sendMessage = async (req, res) => {
       });
     }
 
-    const history = chat.messages.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content }]
-    }));
 
-    // Now push the current user message to DB AFTER building history for startChat
+
+
+
+
+    // =======================
+    // CRISIS DETECTION
+    // =======================
+
+    const crisisKeywords = [
+      'suicide',
+      'kill myself',
+      'end my life',
+      'hopeless',
+      "can't go on",
+      'self harm',
+      'die',
+      'want to die'
+    ];
+
+    const lowerMessage = message.toLowerCase();
+
+    const isCrisis = crisisKeywords.some(keyword =>
+      lowerMessage.includes(keyword)
+    );
+
+    if (isCrisis) {
+
+      const crisisResponse = `
+It sounds like you're going through something really difficult right now.
+
+Please consider reaching out to iCall:
+9152987821
+
+You do not have to go through this alone.
+
+I am not a substitute for professional therapy, but I am here to support you.
+`;
+
+      chat.messages.push({
+        sender: 'user',
+        content: message
+      });
+
+      chat.messages.push({
+        sender: 'ai',
+        content: crisisResponse
+      });
+
+      await chat.save();
+
+      return res.status(200).json(chat);
+    }
+
+
+
+
+
+
+
+    // =======================
+    // BUILD HISTORY
+    // =======================
+
+    const MAX_HISTORY = 20;
+
+    const history = chat.messages
+      .slice(-MAX_HISTORY)
+      .map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
+
+
+
+
+
+
+
+    // =======================
+    // GEMINI
+    // =======================
+
+    let aiResponseContent =
+      "I'm unable to respond right now. Please try again later.";
+
+    try {
+
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('Missing GEMINI_API_KEY');
+      }
+
+      console.log('Initializing Gemini...');
+
+      const genAI = new GoogleGenerativeAI(
+        process.env.GEMINI_API_KEY
+      );
+
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+
+        systemInstruction: systemInstructionText,
+
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.9,
+          maxOutputTokens: 300
+        }
+      });
+
+      console.log(
+        `Starting chat with ${history.length} previous messages`
+      );
+
+      const chatSession = model.startChat({
+        history
+      });
+
+      const result = await chatSession.sendMessage(message);
+
+      console.log('Gemini raw result received');
+
+      const response = result.response;
+
+      if (!response) {
+        throw new Error('No response from Gemini');
+      }
+
+      aiResponseContent = response.text();
+
+      console.log('AI Response:', aiResponseContent);
+
+    } catch (geminiError) {
+
+      console.error('Gemini Error:', geminiError);
+
+      if (
+        geminiError.message &&
+        geminiError.message.includes('SAFETY')
+      ) {
+
+        aiResponseContent =
+          "I'm sorry, I cannot respond to that request. Please try talking about it differently.";
+
+      } else {
+
+        aiResponseContent =
+          "I'm having trouble responding right now. Please try again in a moment.";
+      }
+    }
+
+
+
+
+
+
+
+    // =======================
+    // SAVE MESSAGES
+    // =======================
+
     chat.messages.push({
       sender: 'user',
       content: message
     });
 
-    let aiResponseContent = "I'm unable to respond right now. Please try again later.";
-
-    try {
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error("Missing Gemini API key in environment variables");
-      }
-
-      // Initialize genAI and model inside the handler for robustness
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash-lite", // Using the model you selected
-        systemInstruction: systemInstructionText
-      });
-
-      console.log(`Starting chat session for user ${req.user.id} with ${history.length} previous messages.`);
-
-      const chatSession = model.startChat({
-        history: history,
-      });
-
-      const result = await chatSession.sendMessage(message);
-      const response = await result.response;
-
-      if (!response || !response.text) {
-        throw new Error("Invalid response received from Gemini API");
-      }
-
-      aiResponseContent = response.text();
-      console.log("Gemini responded successfully.");
-
-    } catch (geminiError) {
-      console.error("Gemini API Error details:", {
-        message: geminiError.message,
-        stack: geminiError.stack,
-        historyCount: history.length,
-        model: "gemini-2.5-flash-lite"
-      });
-      
-      // Check if it's a safety block
-      if (geminiError.message && geminiError.message.includes("SAFETY")) {
-        aiResponseContent = "I'm sorry, I cannot respond to that as it may violate safety guidelines. How else can I help you?";
-      }
-    }
-
-    
     chat.messages.push({
       sender: 'ai',
       content: aiResponseContent
@@ -134,16 +286,34 @@ const sendMessage = async (req, res) => {
 
     await chat.save();
 
-    res.status(200).json(chat);
+
+
+
+
+
+
+    // =======================
+    // RESPONSE
+    // =======================
+
+    return res.status(200).json(chat);
 
   } catch (error) {
-    console.error("Server Error:", error);
-    res.status(500).json({ message: error.message });
+
+    console.error('Server Error:', error);
+
+    return res.status(500).json({
+      message: 'Internal server error'
+    });
   }
 };
 
 
+
+
+
+
 module.exports = {
   getChatHistory,
-  sendMessage,
+  sendMessage
 };
